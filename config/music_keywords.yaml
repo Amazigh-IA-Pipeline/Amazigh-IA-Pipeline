@@ -1,0 +1,63 @@
+# Title-only music detection (scout step). A video whose TITLE contains one of
+# these is skipped and logged in scout/output/scout_removed.xlsx with the keyword.
+# Latin keywords match whole words only ("cover" does not match "coverage");
+# Arabic keywords match anywhere (so "احواش" also matches "الاحواش").
+keywords:
+  # English / French / Latinized
+  - clip
+  - video clip
+  - music
+  - musique
+  - song
+  - chanson
+  - remix
+  - cover
+  - lyrics
+  - instrumental
+  - teaser
+  - trailer
+  - quran
+  - nasheed
+  - anachid
+  - ahwach
+  - ahidous
+  - amarg
+  - omar anddam
+  # Arabic / Amazigh
+  - أغنية
+  - اغنية
+  - أغاني
+  - اغاني
+  - كليب
+  - فيديو كليب
+  - موسيقى
+  - معزوفة
+  - كلمات
+  - سهرة
+  - حفل
+  - حفلة
+  - مهرجان
+  - ريمكس
+  - كوفر
+  - أمارگ
+  - أمارك
+  - امارك
+  - امرك
+  - أحواش
+  - احواش
+  - أحيدوس
+  - احيدوس
+  - إزلان
+  - إزران
+  - تريلر
+  - تيزر
+  - إعلان
+  - اعلان
+  - قرآن
+  - قران
+  - تلاوة
+  - أنشودة
+  - انشودة
+  - نشيد
+  - صامت
+  - بدون صوت

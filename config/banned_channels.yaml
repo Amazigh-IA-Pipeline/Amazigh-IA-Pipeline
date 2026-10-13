@@ -1,0 +1,8 @@
+# Channels excluded at scout time. Any of the three forms works.
+# channel_id is the safest (it never changes); names are matched case-insensitively.
+channel_ids: []
+#  - UCxxxxxxxxxxxxxxxxxxxxxx
+channel_urls: []
+#  - https://www.youtube.com/@SomeChannel
+channel_names: []
+#  - Some Channel Name

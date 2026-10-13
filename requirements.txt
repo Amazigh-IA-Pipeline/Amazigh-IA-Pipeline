@@ -1,0 +1,11 @@
+pandas>=2.0
+openpyxl>=3.1
+pyyaml>=6.0
+pyarrow>=14
+numpy>=1.24
+yt-dlp>=2025.1.1
+huggingface_hub>=0.24
+torch>=2.0
+silero-vad>=5.1
+# system tools: ffmpeg (with chromaprint) or ffmpeg + Chromaprint's fpcalc
+# tests only: espeakng-loader

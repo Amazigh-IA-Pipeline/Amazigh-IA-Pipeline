@@ -1,0 +1,65 @@
+# Amazigh-IA pipeline — all settings in one place.
+# Every step reads this file. Paths are fixed by the repo layout (see README).
+
+youtube:
+  # Optional: a cookies.txt exported from a logged-in browser, for videos that
+  # trigger YouTube's "sign in to confirm you're not a bot" check. Leave empty if not needed.
+  cookies_file: ""
+  # Optional alternative: read cookies straight from a browser ("chrome", "firefox", "edge"...).
+  cookies_from_browser: ""
+
+scout:
+  min_duration_sec: 2        # videos shorter than this are skipped (very short shorts)
+  tabs: [videos, streams, shorts]   # channel tabs to list
+  delay_sec: 0.3              # pause between metadata requests (raise if YouTube rate-limits)
+
+download:
+  duration_tolerance_sec: 5   # |actual - expected| allowed, in seconds ...
+  duration_tolerance_pct: 2   # ... or this % of the expected duration, whichever is larger
+  min_size_kb: 100            # smaller files are treated as broken
+  save_every: 10              # write reference.xlsx every N videos
+  max_gb: 500                 # stop when downloads/ reaches this size
+  sleep_min_sec: 1.0          # yt-dlp pause before each download (randomised between min and max)
+  sleep_max_sec: 3.0
+
+fingerprint:
+  window_sec: 60              # length of each fingerprinted window (start, middle, end)
+  tool: auto                  # auto | ffmpeg | fpcalc   (auto = ffmpeg's built-in chromaprint if present, else fpcalc)
+
+dedup_audio:
+  duration_tolerance_sec: 3   # only compare videos whose durations differ by at most this
+  similarity_threshold: 0.85  # bit similarity needed for EACH of start / middle / end
+                              # (same recording ~0.92-1.0, unrelated audio ~0.5-0.67)
+  max_offset_sec: 3           # also try shifting one fingerprint by up to this (re-uploads with a longer intro)
+
+segment:
+  target_duration: 20.0
+  min_duration: 15.0
+  max_duration: 27.0
+  threshold: 0.50             # Silero speech-start probability
+  neg_threshold: null         # speech-end probability; null = max(threshold - 0.15, 0.01)
+  min_speech_ms: 300
+  min_silence_ms: 600
+  pad_ms: 180
+  max_internal_silence: 2.0
+  forced_cut_search: 5.0
+  min_speech_ratio: 0.6       # a clip is kept only if at least this fraction is speech
+  min_speech_confidence: 0.0  # 0 = off (column always computed)
+  min_modulation_ratio: 0.0   # 0 = off (column always computed)
+  # audio is always written as 16 kHz mono (Silero VAD works at 16 kHz)
+  format: flac                # flac | wav
+  workers: 2
+  threads: 1                  # PyTorch threads per worker
+  max_tasks_per_worker: 40    # recycle workers to cap memory growth
+  save_every: 5
+  save_rejected_audio: false  # true = also write rejected clips to segment/rejected/ for listening
+  vad_backend: silero         # silero | energy  (energy = crude test-only detector, no torch)
+
+push:
+  backend: hf                 # hf | local   (local = writes to push/_local_hub/, for testing without Hugging Face)
+  hf_org: "Amazigh-IA"        # TO CONFIRM
+  repo_prefix: amazigh-ia     # repos: <org>/<prefix>-audio-001, <org>/<prefix>-segments-001 ...
+  private: true
+  max_repo_gb: 75             # HF limit is 80 GB per private repo; keep room for README/metadata
+  shard_mb: 500               # target parquet shard size for segments
+  files_per_commit: 100

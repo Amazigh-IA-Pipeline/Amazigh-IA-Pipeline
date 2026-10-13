@@ -1,0 +1,21 @@
+# data (rebuilt by the pipeline) — reference/ is NOT ignored on purpose: back it up
+scout/input/*.xlsx
+scout/output/
+dedup_url/output/
+dedup_url/removed_url.xlsx
+download/downloads/
+dedup_audio/duplicates.xlsx
+segment/segments/
+segment/rejected/
+segment/.vad_cache/
+push/_staging/
+push/_local_hub/
+logs/*.log
+tests/_fixtures/
+__pycache__/
+*.tmp.xlsx
+~$*.xlsx
+reference/*.xlsx
+reference/*.parquet
+cookies.txt
+*.log
