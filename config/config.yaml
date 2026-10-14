@@ -48,7 +48,7 @@ segment:
   min_modulation_ratio: 0.0   # 0 = off (column always computed)
   # audio is always written as 16 kHz mono (Silero VAD works at 16 kHz)
   format: flac                # flac | wav
-  workers: 2
+  workers: 4
   threads: 1                  # PyTorch threads per worker
   max_tasks_per_worker: 40    # recycle workers to cap memory growth
   save_every: 5
