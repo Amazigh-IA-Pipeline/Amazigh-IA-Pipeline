@@ -42,7 +42,7 @@ import pandas as pd
 from common.fingerprint import compute_fingerprints
 from common.reference_io import Reference, backup_reference, load_fingerprints, save_fingerprints
 from common.utils import (PATHS, get_logger, load_config, now_iso, probe_duration, read_excel, rel_path,
-                          safe_folder_name, setup_logging, to_float, to_int, ytdlp_base_options)
+                          require_ffmpeg, safe_folder_name, setup_logging, to_float, to_int, ytdlp_base_options)
 
 STEP = 'download'
 log = get_logger(STEP)
@@ -132,7 +132,7 @@ def check_file(path: Path, expected_sec: float, config: dict) -> tuple[bool, str
                 return False, f'bad file header for .{ext}', 0.0
     actual = probe_duration(path)
     if actual is None:
-        return False, 'ffprobe cannot read the file', 0.0
+        return False, 'cannot read the audio duration (file broken or not audio)', 0.0
     if expected_sec > 0:
         tolerance = max(to_float(dcfg.get('duration_tolerance_sec'), 5),
                         expected_sec * to_float(dcfg.get('duration_tolerance_pct'), 2) / 100)
@@ -251,6 +251,7 @@ def run(config: dict, **options) -> dict:
     fp_cfg = config.get('fingerprint') or {}
     save_every = max(1, to_int(dcfg.get('save_every'), 10))
     max_bytes = to_float(dcfg.get('max_gb'), 500) * 1024 ** 3
+    require_ffmpeg()          # stop BEFORE downloading, instead of marking every video failed
 
     backup_reference()
     ref = Reference()
@@ -309,8 +310,7 @@ def run(config: dict, **options) -> dict:
                     log.warning('  fingerprint failed (dedup_audio will retry): %s', exc)
                 ref.upsert(vid, **identity, download_status='downloaded', fail_reason='', file_path=rel_path(path),
                            file_size_mb=round(size / 1048576, 2), actual_duration_sec=round(result['actual'], 2),
-                           downloaded_at=now_iso(), dedup_status='pending', duplicate_of='',
-                           segment_status='pending', segment_error='')
+                           downloaded_at=now_iso(), dedup_status='pending', duplicate_of='')
                 counts['downloaded'] += 1
                 log.info('  ok  %.1f MB, %.0f s', size / 1048576, result['actual'])
             elif result['reason'] in SESSION_ERRORS:
@@ -326,7 +326,7 @@ def run(config: dict, **options) -> dict:
                 consecutive_session_errors = 0
                 ref.upsert(vid, **identity, download_status='failed', fail_reason=f"{result['reason']}: {result['detail']}",
                            file_path='', file_size_mb=float('nan'), actual_duration_sec=float('nan'),
-                           downloaded_at=now_iso(), dedup_status='', duplicate_of='', segment_status='')
+                           downloaded_at=now_iso(), dedup_status='', duplicate_of='')
                 counts['failed'] += 1
                 log.warning('  FAILED %s: %s', result['reason'], result['detail'])
             pending_save += 1
