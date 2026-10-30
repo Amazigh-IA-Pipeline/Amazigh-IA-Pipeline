@@ -30,9 +30,6 @@ PATHS = {
     'removed_url': ROOT / 'dedup_url' / 'removed_url.xlsx',
     'downloads': ROOT / 'download' / 'downloads',
     'duplicates_report': ROOT / 'dedup_audio' / 'duplicates.xlsx',
-    'segments': ROOT / 'segment' / 'segments',
-    'segments_rejected': ROOT / 'segment' / 'rejected',
-    'vad_cache': ROOT / 'segment' / '.vad_cache',
     'push_staging': ROOT / 'push' / '_staging',
     'local_hub': ROOT / 'push' / '_local_hub',
     'logs': ROOT / 'logs',
@@ -156,16 +153,59 @@ def to_float(value, default=0.0) -> float:
         return default
 
 
+def require_ffmpeg() -> None:
+    """Fail early and clearly if ffmpeg / ffprobe are not installed."""
+    import shutil
+    missing = [tool for tool in ('ffmpeg', 'ffprobe') if shutil.which(tool) is None]
+    if missing:
+        raise RuntimeError(f"{' and '.join(missing)} not found on PATH. Install FFmpeg "
+                           "(Windows: winget install Gyan.FFmpeg), close and reopen the terminal, "
+                           "then check with: ffprobe -version")
+
+
+def _first_number(text: str) -> float | None:
+    for line in (text or '').splitlines():
+        try:
+            value = float(line.strip())
+            if value > 0:
+                return value
+        except ValueError:
+            continue
+    return None
+
+
 def probe_duration(path) -> float | None:
-    """Real duration of an audio file in seconds (ffprobe), or None."""
+    """Real duration of an audio file in seconds, or None if it cannot be read.
+
+    1. the container's duration (ffprobe format=duration)
+    2. the audio stream's duration (ffprobe stream=duration)
+    3. decode the whole file and read the last timestamp (ffmpeg) — needed for
+       YouTube .webm files, which often store no duration in their header
+       (ffprobe then answers "N/A")
+    """
+    import re as _re
     import subprocess
+    for entries, extra in (('format=duration', []), ('stream=duration', ['-select_streams', 'a:0'])):
+        try:
+            res = subprocess.run(['ffprobe', '-v', 'error', *extra, '-show_entries', entries,
+                                  '-of', 'default=noprint_wrappers=1:nokey=1', str(path)],
+                                 capture_output=True, text=True, timeout=120)
+            value = _first_number(res.stdout)
+            if value:
+                return value
+        except Exception:
+            pass
     try:
-        res = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
-                              '-of', 'default=noprint_wrappers=1:nokey=1', str(path)],
-                             capture_output=True, text=True, timeout=120)
-        return float(res.stdout.strip())
+        res = subprocess.run(['ffmpeg', '-nostdin', '-v', 'info', '-i', str(path), '-vn', '-f', 'null', '-'],
+                             capture_output=True, text=True, timeout=1800, errors='replace')
+        times = _re.findall(r'time=(\d+):(\d+):(\d+(?:\.\d+)?)', res.stderr)
+        if times:
+            h, m, s = times[-1]
+            value = int(h) * 3600 + int(m) * 60 + float(s)
+            return value if value > 0 else None
     except Exception:
-        return None
+        pass
+    return None
 
 
 def rel_path(path) -> str:
